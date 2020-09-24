@@ -129,7 +129,3 @@ dmypy.json
 .pyre/
 *pyc
 */*.pyc
-<<<<<<< HEAD
-=======
-config.py
->>>>>>> 2570304... add draw curve
