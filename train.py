@@ -3,6 +3,7 @@ from dataReader.celebaData import *
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import models
+import time
 import signal
 import torch.nn as nn
 from torch.optim import lr_scheduler
@@ -12,7 +13,7 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 version =  torch.__version__
-os.environ['CUDA_VISIBLE_DEVICES'] = "1"
+#os.environ['CUDA_VISIBLE_DEVICES'] = "1"
 
 y_loss = {} # loss history
 y_loss['train'] = []
