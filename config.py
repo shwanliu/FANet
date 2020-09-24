@@ -11,7 +11,7 @@ class Config(object):
         self.trainFolder = '/home/shawnliu/workPlace/FANet/datasets/img/'  # 训练图像路径
         self.labelFolder = './datasets/Anno/list_attr_celeba.txt'  # 训练图像路径
         self.testFolder = 'dataReader/test/'  # 测试图像路径
-        self.modelPath = 'snapshots/resnet18.pth'  # 模型存储路径
+        self.modelPath = 'checkpoint/'  # 模型存储路径
         # 这一部分设置模型基本参数
         self.lr = 0.01
         self.warm_epoch = 0

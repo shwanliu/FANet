@@ -24,7 +24,7 @@ y_acc['val'] = []
 
 def save_network(network, epoch_label):
     save_filename = 'net_%s.pth'% epoch_label
-    save_path = os.path.join('./modelpath',name,save_filename)
+    save_path = os.path.join('./checkpoint',opt.model,save_filename)
     torch.save(network.cpu().state_dict(), save_path)
     if torch.cuda.is_available():
         network.cuda(gpu_ids[0])
@@ -72,7 +72,7 @@ def train(**kwargs):
     # 开始训练
     signal.signal(signal.SIGINT, sigTerSave)  # 设置监听器方便随时中断
     dataloaders = {'train':trainLoader,'val':cvLoader}
-
+    since = time.time()
     warm_up = 0.1 # We start from the 0.1*lrRate
     warm_iteration = round(len(dataloaders['train'])/opt.batchSize)*opt.warm_epoch # first 5 epoch
     for epoch in range(opt.maxEpoch):
@@ -127,57 +127,42 @@ def train(**kwargs):
                 else :  # for the old version like 0.3.0 and 0.3.1
                     # running_loss += loss.data[0] * now_batch_size
                     running_loss += loss.data[0]
-                #running_corrects += float(torch.sum(preds == labels.data))
-                # print(preds)
-                # _, labels = torch.max(labels.data, 1)
-                # print(labels)
-                # _, preds = torch.max(outputs.data, 1)
+
                 zero = torch.zeros_like(outputs.data)
                 one = torch.ones_like(outputs.data)
                 preds = torch.where(outputs.data > 0.6, one, zero)
-                # print(preds)
-                # print(labels)
+
                 running_corrects += float(torch.sum(preds == labels.data.float()))
-            epoch_loss = running_loss / (len(dataloaders[phase])*opt.batchSize)
-            epoch_acc = running_corrects / (len(dataloaders[phase])*opt.batchSize)
-                #running_corrects += float(torch.sum(preds == labels.data))
+
+            epoch_loss = running_loss / (len(dataloaders[phase]))
+            epoch_acc = running_corrects / (len(dataloaders[phase]))
             
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
             
             y_loss[phase].append(epoch_loss)
-            y_acc[phase].append(epoch_acc)            
-            # deep copy the model
+            y_acc[phase].append(epoch_acc)  
+            
             if phase == 'val':
-                last_model_wts = model.state_dict()
-                if epoch%10 == 9:
-                    save_network(model, epoch)
-                draw_curve(epoch)
+                time_elapsed = time.time() - since
+                print('Training complete in {:.0f}m {:.0f}s'.format(
+                    time_elapsed // 60, time_elapsed % 60))
+                print()
 
-        time_elapsed = time.time() - since
-        print('Training complete in {:.0f}m {:.0f}s'.format(
-            time_elapsed // 60, time_elapsed % 60))
-        print()
+                checkpoint = {"model_state_dict": model.state_dict(),
+                        "optimizer_state_dict": optimizer.state_dict(),
+                        "epoch": epoch}
+                # save_model_file = os.path.join(args.save_model, 'net_%s.pkl'%epoch)
+                model.save('checkpoint/epoch%s'%epoch + opt.model + '.pth')
 
     time_elapsed = time.time() - since
-    print('Training complete in {:.0f}m {:.0f}s'.format(
-        time_elapsed // 60, time_elapsed % 60))
-    #print('Best val Acc: {:4f}'.format(best_acc))
-
-    # load best model weights
-    model.load_state_dict(last_model_wts)
-    save_network(model, 'last')
-
-    # 保存
-    model.save('snapshots/' + opt.model + '.pth')
-    # 保留数据方便作图
+    print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
     np.savetxt("tarin_Acc.txt",  y_acc['train'])
     np.savetxt("val_Acc.txt", y_acc['val'])
     np.savetxt("train_Loss.txt", y_loss['train'])
     np.savetxt("val_Loss.txt", y_loss['val'])
     print('done')
-
-
+    
 def test(**kwargs):
     # 针对test（gallery）数据集进行
     opt.parse(**kwargs)
@@ -242,7 +227,7 @@ def draw_curve(current_epoch):
     if current_epoch == 0:
         ax0.legend()
         ax1.legend()
-    fig.savefig( os.path.join('./model',name,'train.jpg'))
+    fig.savefig( os.path.join('./figure',opt.model,'train.jpg'))
 
 def sigTerSave(sigNum, frame):
     """
