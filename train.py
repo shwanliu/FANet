@@ -14,23 +14,14 @@ import matplotlib.pyplot as plt
 version =  torch.__version__
 os.environ['CUDA_VISIBLE_DEVICES'] = "1"
 
-######################################################################
-# Draw Curve
-#---------------------------
-#x_epoch1 = []
-#fig1 = plt.figure()
-#ax01 = fig.add_subplot(121, title="loss")
-#ax11 = fig.add_subplot(122, title="top1err")
-#def draw1_curve(current_epoch):
-#    x_epoch.append(current_epoch)
-#    ax0.plot(x_epoch, y_loss['train'], 'bo-', label='train')
-#    ax0.plot(x_epoch, y_loss['val'], 'ro-', label='val')
-#    ax1.plot(x_epoch, y_err['train'], 'bo-', label='train')
-#    ax1.plot(x_epoch, y_err['val'], 'ro-', label='val')
-#    if current_epoch == 0:
-#        ax0.legend()
-#        ax1.legend()
-#    fig.savefig( os.path.join('./model',name,'train.jpg'))
+y_loss = {} # loss history
+y_loss['train'] = []
+y_loss['val'] = []
+
+y_acc = {} # acc history
+y_acc['train'] = []
+y_acc['val'] = []
+
 def save_network(network, epoch_label):
     save_filename = 'net_%s.pth'% epoch_label
     save_path = os.path.join('./modelpath',name,save_filename)
@@ -76,13 +67,6 @@ def train(**kwargs):
     trainAcc = []  # 记录训练集精度变化
     cvAcc = []  # 记录交叉验证数据集精度变化
 
-    y_loss = {} # loss history
-    y_loss['train'] = []
-    y_loss['val'] = []
-    y_err = {}
-    y_err['train'] = []
-    y_err['val'] = []
-
     if opt.useGpu:
         model = model.cuda()
     # 开始训练
@@ -108,27 +92,14 @@ def train(**kwargs):
             running_corrects = 0.0
             # Iterate over data.
             for count, (inputs, labels) in enumerate(tqdm(dataloaders[phase])):
-            #for data in tqdm(dataloaders[phase]):
-                #print(count
-                # get the inputs
-                #inputs = data['image']
-                #labels = data['label']
                 now_batch_size,c,h,w = inputs.shape
                 if now_batch_size<opt.batchSize: # skip the last batch
                     continue
-                #print(inputs.shape)
-                # wrap them in Variable
                 if opt.useGpu:
                     inputs = Variable(inputs.cuda().detach())
                     labels = Variable(labels.cuda().detach())
                 else:
                     inputs, labels = Variable(inputs), Variable(labels)
-                # if we use low precision, input also need to be fp16
-                #if fp16:
-                #    inputs = inputs.half()
- 
-                # zero the parameter gradients
-                #optimizer.zero_grad()
 
                 # forward
                 if phase == 'val':
@@ -138,43 +109,24 @@ def train(**kwargs):
                     outputs = model(inputs)
 
                 loss = criterion(outputs, labels.float())
-                # if not opt.PCB:
-                #     _, preds = torch.max(outputs.data, 1)
-                #     loss = criterion(outputs, labels)
-                # else:
-                #     part = {}
-                #     sm = nn.Softmax(dim=1)
-                #     num_part = 6
-                #     for i in range(num_part):
-                #         part[i] = outputs[i]
-
-                #     score = sm(part[0]) + sm(part[1]) +sm(part[2]) + sm(part[3]) +sm(part[4]) +sm(part[5])
-                #     _, preds = torch.max(score.data, 1)
-
-                #     loss = criterion(part[0], labels)
-                #     for i in range(num_part-1):
-                #         loss += criterion(part[i+1], labels
-                #_, preds = torch.max(outputs.data, 1)
-                # backward + optimize only if in training phase
                 if epoch<opt.warm_epoch and phase == 'train': 
                     warm_up = min(1.0, warm_up + 0.9 / warm_iteration)
                     loss *= warm_up
 
                 if phase == 'train':
-                    # if fp16: # we use optimier to backward loss
-                    #     with amp.scale_loss(loss, optimizer) as scaled_loss:
-                    #         scaled_loss.backward()
-                    # else:
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
                 if count!=0 and count % 80 == 0:
                     print('Its '+phase+' epoch: '+str(epoch) +', step:'+str(count) +' in epoch, ' +phase+'_loss: '+str(loss.item())+' ,'+phase+'_acc: '+str(float(torch.sum(preds == labels.data.float()))/(opt.batchSize*40))+', lr: '+str(optimizer.param_groups[0]['lr']))
+               
                 # statistics
                 if int(version[0])>0 or int(version[2]) > 3: # for the new version like 0.4.0, 0.5.0 and 1.0.0
-                    running_loss += loss.item() * now_batch_size
+                    # running_loss += loss.item() * now_batch_size
+                    running_loss += loss.item()
                 else :  # for the old version like 0.3.0 and 0.3.1
-                    running_loss += loss.data[0] * now_batch_size
+                    # running_loss += loss.data[0] * now_batch_size
+                    running_loss += loss.data[0]
                 #running_corrects += float(torch.sum(preds == labels.data))
                 # print(preds)
                 # _, labels = torch.max(labels.data, 1)
@@ -186,15 +138,15 @@ def train(**kwargs):
                 # print(preds)
                 # print(labels)
                 running_corrects += float(torch.sum(preds == labels.data.float()))
-            epoch_loss = running_loss / len(dataloaders[phase])
-            epoch_acc = running_corrects / len(dataloaders[phase])
+            epoch_loss = running_loss / (len(dataloaders[phase])*opt.batchSize)
+            epoch_acc = running_corrects / (len(dataloaders[phase])*opt.batchSize)
                 #running_corrects += float(torch.sum(preds == labels.data))
             
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
             
             y_loss[phase].append(epoch_loss)
-            y_err[phase].append(1.0-epoch_acc)            
+            y_acc[phase].append(epoch_acc)            
             # deep copy the model
             if phase == 'val':
                 last_model_wts = model.state_dict()
@@ -216,56 +168,13 @@ def train(**kwargs):
     model.load_state_dict(last_model_wts)
     save_network(model, 'last')
 
-
-
-    # with trange(opt.maxEpoch, desc='Round') as epochBar:  # 控制外部迭代的进度条
-    #     for ii in epochBar:
-    #         for phase in ['train', 'val']:
-    #             if phase is 'val':
-    #                 # 进入val模式
-    #                 model.train(False)
-    #                 cvAcc.append(val(model, cvLoader))
-    #                 epochBar.set_description('val acc after epoch{0:d}:{1:4.3f}%'.format(ii, 100 * cvAcc[-1]))
-    #             else:
-    #                 timerOp.step()  # 仅有达到40轮之后学习率才会下降
-    #                 model.train(True)
-    #                 roundNum = round(trainNum // opt.batchSize)
-    #                 with trange(roundNum) as roundBar:
-    #                     for jj, (data) in zip(roundBar, trainLoader):
-    #                         # print(data)
-    #                         # print(data['image'])
-    #                         # print(data['label'])
-    #                         roundBar.set_description('Round')
-    #                         if not isTer:
-    #                             image = data['image']
-    #                             label = data['label']
-    #                             if opt.useGpu:
-    #                                 data = data.cuda()
-    #                                 label = label.cuda()
-    #                             optimizer.zero_grad()
-    #                             score = model(image)
-    #                             loss = criterion(score, label.float())
-    #                             print(loss)
-    #                             lossVal.append(loss.item[0])  # 存储下来
-    #                             loss.backward()
-    #                             optimizer.step()  # 更新
-    #                         else:
-    #                             # 中断时要先存储模型参数再退出
-    #                             model.save('temp.pth')
-    #                             print('完毕，中断')
-    #                             exit(-1)  # 中断
-    #                         # if jj % opt.printFreq == 0:
-    #                         #     # 打印loss
-    #                         roundBar.set_description('current loss{}'.format(lossVal[-1]))
-    #                         if ii % opt.snapFreq == opt.snapFreq - 1:
-    #                             # 要保存
-    #                             model.save()
     # 保存
     model.save('snapshots/' + opt.model + '.pth')
     # 保留数据方便作图
-    np.savetxt("cvAcc.txt", cvAcc)
-    np.savetxt("trainAcc.txt", trainAcc)
-    np.savetxt("lossVal.txt", lossVal)
+    np.savetxt("tarin_Acc.txt",  y_acc['train'])
+    np.savetxt("val_Acc.txt", y_acc['val'])
+    np.savetxt("train_Loss.txt", y_loss['train'])
+    np.savetxt("val_Loss.txt", y_loss['val'])
     print('done')
 
 
@@ -328,8 +237,8 @@ def draw_curve(current_epoch):
     x_epoch.append(current_epoch)
     ax0.plot(x_epoch, y_loss['train'], 'bo-', label='train')
     ax0.plot(x_epoch, y_loss['val'], 'ro-', label='val')
-    ax1.plot(x_epoch, y_err['train'], 'bo-', label='train')
-    ax1.plot(x_epoch, y_err['val'], 'ro-', label='val')
+    ax1.plot(x_epoch, y_acc['train'], 'bo-', label='train')
+    ax1.plot(x_epoch, y_acc['val'], 'ro-', label='val')
     if current_epoch == 0:
         ax0.legend()
         ax1.legend()
