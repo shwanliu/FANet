@@ -1,6 +1,8 @@
 import torch
 import models
 from PIL import Image
+import warnings
+warnings.filterwarnings("ignore")
 # from torchvision import transforms
 import torchvision.transforms as T
 device = torch.device('cuda')
@@ -38,7 +40,8 @@ if __name__ == '__main__':
     lines = f.readlines()
     for line in lines:
         className.append( line.strip().split("：")[1])
-    # print(className)
+    print(className)
     #modelPath = "/home/shawnliu/workPlace/face_attr/checkpoint/net_6.pkl"
-    modelPath = "checkpoint/epoch11FANet.pth"
-    prediect('datasets/img/000001.jpg',modelPath,0.6,className)
+    modelPath = "checkpoint/epoch10FANet.pth"
+    prediect('testliu2.jpg',modelPath,0.6,className)
+
