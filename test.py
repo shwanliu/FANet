@@ -14,7 +14,7 @@ transform=T.Compose([
                             ])
 def prediect(img_path, modelPath, value, classes):
     net = models.FANet(40)
-    net.load_state_dict(torch.load(modelPath))
+    net.load_state_dict(torch.load(modelPath, map_location=torch.device('cpu')))
     #net=net.cuda()
     torch.no_grad()
     #print(net)
@@ -26,14 +26,16 @@ def prediect(img_path, modelPath, value, classes):
     zero = torch.zeros_like(outputs.data)
     one = torch.ones_like(outputs.data)
     predicted = torch.where(outputs.data > value, one, zero)
-    print(predicted)
     pred = dict()
+    print("==="*10)
     for i in range(len(classes)):
         if outputs[0][i].item()>=value:
-            pred[classes[i]]=outputs[0][i].item()
+            # pred[classes[i]]=outputs[0][i].item()
+            score = float('%.4f' %outputs[0][i].item())
+            print(classes[i]+" : "+str(score))
+    print("==="*10)
     # _, predicted = torch.max(outputs, 1)
     # print(predicted)
-    print('this picture maybe :',pred)
 if __name__ == '__main__':
     f = open('datasets/Anno/class.txt')
     className = []
@@ -44,4 +46,3 @@ if __name__ == '__main__':
     #modelPath = "/home/shawnliu/workPlace/face_attr/checkpoint/net_6.pkl"
     modelPath = "checkpoint/epoch10FANet.pth"
     prediect('testliu2.jpg',modelPath,0.6,className)
-
