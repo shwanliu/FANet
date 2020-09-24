@@ -117,8 +117,8 @@ def train(**kwargs):
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
-                if count!=0 and count % 80 == 0:
-                    print('Its '+phase+' epoch: '+str(epoch) +', step:'+str(count) +' in epoch, ' +phase+'_loss: '+str(loss.item())+' ,'+phase+'_acc: '+str(float(torch.sum(preds == labels.data.float()))/(opt.batchSize*40))+', lr: '+str(optimizer.param_groups[0]['lr']))
+                if count!=0 and count % opt.printFreq == 0:
+                    print('Its '+phase+' epoch: '+str(epoch) +', step:'+str(count) +' in epoch, ' +phase+'_loss: '+str(loss.item())+' ,'+phase+'_acc: '+str(float(torch.sum(preds == labels.data.float()))/(opt.batchSize*opt.numClass))+', lr: '+str(optimizer.param_groups[0]['lr']))
                
                 # statistics
                 if int(version[0])>0 or int(version[2]) > 3: # for the new version like 0.4.0, 0.5.0 and 1.0.0
