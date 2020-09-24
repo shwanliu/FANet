@@ -8,7 +8,7 @@ class Config(object):
         初始化系列参数方便修改
         """
         # 这一部分设置数据导入导出路径
-        self.trainFolder = '/Volumes/TOSHIBA EXT/CelebA/data/img_align_celeba'  # 训练图像路径
+        self.trainFolder = '/home/shawnliu/workPlace/FANet/datasets/img/'  # 训练图像路径
         self.labelFolder = './datasets/Anno/list_attr_celeba.txt'  # 训练图像路径
         self.testFolder = 'dataReader/test/'  # 测试图像路径
         self.modelPath = 'snapshots/resnet18.pth'  # 模型存储路径
@@ -16,7 +16,7 @@ class Config(object):
         self.lr = 0.01
         self.warm_epoch = 0
         self.weightDecay = 1e-3
-        self.batchSize = 2
+        self.batchSize = 64
         self.maxEpoch = 100
         self.lrDecay = 0.1  # 学习率下降率
         self.lrDecayRate = 40  # 每隔那么多次，学习率就下降一下
@@ -25,7 +25,7 @@ class Config(object):
         # self.lossFunc = 'CrossEntropyLoss'  # 对应的损失函数
         # 这一部分设置模型训练中其余的参数
         self.printFreq = 80  # 隔80次打印一下
-        self.useGpu = False  # 要不要GPU
+        self.useGpu = True  # 要不要GPU
         self.model = 'FANet'  # 模型名字
         self.numWorker = 4  # 线程数
         self.snapFreq = 1000  # 每过这么多轮保存一下快照
