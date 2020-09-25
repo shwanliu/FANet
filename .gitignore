@@ -1,12 +1,14 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+.DS_Store
 *$py.class
 checkpoint/
 .vscode/*
 # C extensions
+*.mat
 *.so
-
+*.txt
 # Distribution / packaging
 .Python
 build/

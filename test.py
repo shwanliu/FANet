@@ -49,4 +49,4 @@ if __name__ == '__main__':
     print(className)
     #modelPath = "/home/shawnliu/workPlace/face_attr/checkpoint/net_6.pkl"
     modelPath = "checkpoint/epoch10FANet.pth"
-    prediect('testliu2.jpg',modelPath,0.6,className)
+    prediect('testliu.jpg',modelPath,0.6,className)
