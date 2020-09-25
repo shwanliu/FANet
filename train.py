@@ -151,7 +151,7 @@ def train(**kwargs):
                 running_corrects += float(torch.sum(preds == labels.data.float()))
 
             epoch_loss = running_loss / (len(dataloaders[phase]))
-            epoch_acc = running_corrects / (len(dataloaders[phase]))
+            epoch_acc = running_corrects / (len(dataloaders[phase])*opt.batchSize*opt.numClass)
             
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
