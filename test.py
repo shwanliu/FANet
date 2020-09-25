@@ -1,6 +1,6 @@
 import torch
 import models
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import warnings
 warnings.filterwarnings("ignore")
 # from torchvision import transforms
@@ -20,20 +20,24 @@ def prediect(img_path, modelPath, value, classes):
     #print(net)
     net=net.eval()
     img=Image.open(img_path)
-    img=transform(img).unsqueeze(0)
+    draw_table = ImageDraw.Draw(im=img)
+    # img.show()
+    img_=transform(img).unsqueeze(0)
     #img_ = img.to(device)
-    outputs = net(img)
+    outputs = net(img_)
     zero = torch.zeros_like(outputs.data)
     one = torch.ones_like(outputs.data)
     predicted = torch.where(outputs.data > value, one, zero)
     pred = dict()
-    print("==="*10)
+    print("==="*15)
     for i in range(len(classes)):
         if outputs[0][i].item()>=value:
             # pred[classes[i]]=outputs[0][i].item()
             score = float('%.4f' %outputs[0][i].item())
-            print(classes[i]+" : "+str(score))
-    print("==="*10)
+            print("属性："+classes[i]+"===》score："+str(score))
+    print("==="*15)
+    # draw_table.text((100,100),"11",direction=None)
+    # img.show()
     # _, predicted = torch.max(outputs, 1)
     # print(predicted)
 if __name__ == '__main__':
