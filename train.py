@@ -86,6 +86,7 @@ def train(**kwargs):
     since = time.time()
     warm_up = 0.1 # We start from the 0.1*lrRate
     warm_iteration = round(len(dataloaders['train'])/opt.batchSize)*opt.warm_epoch # first 5 epoch
+    weights = load_weight('weights.txt',opt.batchSize)
     for epoch in range(opt.maxEpoch):
         print('Epoch {}/{}'.format(epoch, opt.maxEpoch - 1))
         print('-' * 10)
@@ -109,8 +110,9 @@ def train(**kwargs):
                 if opt.useGpu:
                     inputs = Variable(inputs.cuda().detach())
                     labels = Variable(labels.cuda().detach())
+                    weights  = Variable(weights.cuda().detach())
                 else:
-                    inputs, labels = Variable(inputs), Variable(labels)
+                    inputs, labels, weight = Variable(inputs), Variable(labels), Variable(weights)
 
                 # forward
                 if phase == 'val':
@@ -119,8 +121,6 @@ def train(**kwargs):
                 else:
                     outputs = model(inputs)
                 # 数据不平衡，新增类别权重
-                weights = load_weight('weights.txt',opt.batchSize)
-                print(weights.shape)
                 # criterion = eval('nn.' + opt.lossFunc)
                 criterion = nn.BCELoss(reduction='none')
                 loss = criterion(outputs, labels.float())*weights
