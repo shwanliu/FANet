@@ -108,7 +108,7 @@ def train(**kwargs):
                         outputs = model(inputs)
                 else:
                     outputs = model(inputs)
-
+                print(outputs.shape)
                 loss = criterion(outputs, labels.float())
                 if epoch<opt.warm_epoch and phase == 'train': 
                     warm_up = min(1.0, warm_up + 0.9 / warm_iteration)
@@ -118,6 +118,11 @@ def train(**kwargs):
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
+
+                zero = torch.zeros_like(outputs.data)
+                one = torch.ones_like(outputs.data)
+                preds = torch.where(outputs.data > 0.6, one, zero)
+                
                 if count!=0 and count % opt.printFreq == 0:
                     print('Its '+phase+' epoch: '+str(epoch) +', step:'+str(count) +' in epoch, ' +phase+'_loss: '+str(loss.item())+' ,'+phase+'_acc: '+str(float(torch.sum(preds == labels.data.float()))/(opt.batchSize*opt.numClass))+', lr: '+str(optimizer.param_groups[0]['lr']))
                
@@ -128,10 +133,6 @@ def train(**kwargs):
                 else :  # for the old version like 0.3.0 and 0.3.1
                     # running_loss += loss.data[0] * now_batch_size
                     running_loss += loss.data[0]
-
-                zero = torch.zeros_like(outputs.data)
-                one = torch.ones_like(outputs.data)
-                preds = torch.where(outputs.data > 0.6, one, zero)
 
                 running_corrects += float(torch.sum(preds == labels.data.float()))
 
