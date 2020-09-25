@@ -23,6 +23,16 @@ y_acc = {} # acc history
 y_acc['train'] = []
 y_acc['val'] = []
 
+def load_weight(txt,batchSize):
+    f = open(txt,'r')
+    weights = []
+    for weight in f.readlines():
+        weights.append(float(weight.strip()))
+    weights = torch.Tensor(weights)
+    weights=torch.unsqueeze(weights, 0)
+    weights = torch.repeat_interleave(weights, repeats=batchSize,dim=0)
+    return weights
+
 def save_network(network, epoch_label):
     save_filename = 'net_%s.pth'% epoch_label
     save_path = os.path.join('./checkpoint',opt.model,save_filename)
@@ -108,10 +118,12 @@ def train(**kwargs):
                         outputs = model(inputs)
                 else:
                     outputs = model(inputs)
-                weights = torch.ones_like(outputs.data)-outputs.data
+                # 数据不平衡，新增类别权重
+                weights = load_weight('weights.txt',opt.batchSize)
                 print(weights.shape)
-                criterion = eval('nn.' + opt.lossFunc + '(pos_weight='+weights+'')')
-                loss = criterion(outputs, labels.float())
+                # criterion = eval('nn.' + opt.lossFunc)
+                criterion = nn.BCELoss(reduction='none')
+                loss = criterion(outputs, labels.float())*weights
                 if epoch<opt.warm_epoch and phase == 'train': 
                     warm_up = min(1.0, warm_up + 0.9 / warm_iteration)
                     loss *= warm_up
