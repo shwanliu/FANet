@@ -50,7 +50,7 @@ def train(**kwargs):
     # 生成模型,使用预训练
     model = eval('models.' + opt.model + '(numClass=' + str(opt.numClass) + ')')
     model.train(True)  # 设置模型为训练模式（dropout等均生效）
-    criterion = eval('nn.' + opt.lossFunc + '()')
+    # criterion = eval('nn.' + opt.lossFunc + '()')
     # 初始化优化器,要使用不同的学习率进行优化
     # acclerateParams = list(map(id, model.model.fc.parameters())) + list(map(id, model.classifierLayer.parameters()))
     # baseParams = filter(lambda p: id(p) not in acclerateParams, model.parameters())
@@ -108,7 +108,9 @@ def train(**kwargs):
                         outputs = model(inputs)
                 else:
                     outputs = model(inputs)
-                print(outputs.shape)
+                weights = torch.ones_like(outputs.data)-outputs.data
+                print(weights.shape)
+                criterion = eval('nn.' + opt.lossFunc + '(pos_weight='+weights+'')')
                 loss = criterion(outputs, labels.float())
                 if epoch<opt.warm_epoch and phase == 'train': 
                     warm_up = min(1.0, warm_up + 0.9 / warm_iteration)

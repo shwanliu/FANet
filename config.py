@@ -21,7 +21,7 @@ class Config(object):
         self.lrDecay = 0.1  # 学习率下降率
         self.lrDecayRate = 40  # 每隔那么多次，学习率就下降一下
         self.numClass = 40
-        self.lossFunc = 'BCELoss'  # 对应的损失函数
+        self.lossFunc = 'BCEWithLogitsLoss'  # 对应的损失函数
         # self.lossFunc = 'CrossEntropyLoss'  # 对应的损失函数
         # 这一部分设置模型训练中其余的参数
         self.printFreq = 80  # 隔80次打印一下
