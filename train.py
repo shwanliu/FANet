@@ -166,11 +166,13 @@ def train(**kwargs):
                     time_elapsed // 60, time_elapsed % 60))
                 print()
 
-                checkpoint = {"model_state_dict": model.state_dict(),
-                        "optimizer_state_dict": optimizer.state_dict(),
-                        "epoch": epoch}
+                # checkpoint = {"model_state_dict": model.state_dict(),
+                #         "optimizer_state_dict": optimizer.state_dict(),
+                #         "epoch": epoch}
                 # save_model_file = os.path.join(args.save_model, 'net_%s.pkl'%epoch)
-                model.save('checkpoint/epoch%s'%epoch + opt.model + '.pth')
+                state = {'model': model.state_dict(), 'optimizer': optimizer.state_dict(), 'epoch': epoch}
+                torch.save(state, 'checkpoint/epoch_%s'%epoch + opt.model + '.pth')
+                # model.save('checkpoint/epoch%s'%epoch + opt.model + '.pth')
 
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
