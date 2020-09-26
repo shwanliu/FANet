@@ -16,7 +16,7 @@ class Config(object):
         self.lr = 0.01
         self.warm_epoch = 0
         self.weightDecay = 1e-3
-        self.batchSize = 80
+        self.batchSize = 96
         self.maxEpoch = 100
         self.lrDecay = 0.1  # 学习率下降率
         self.lrDecayRate = 40  # 每隔那么多次，学习率就下降一下
