@@ -121,9 +121,10 @@ def train(**kwargs):
                 else:
                     outputs = model(inputs)
                 # 数据不平衡，新增类别权重
-                # criterion = eval('nn.' + opt.lossFunc)
+                #criterion = eval('nn.' + opt.lossFunc + '()')
                 criterion = nn.BCELoss(reduction='none')
-                loss = criterion(outputs, labels.float())*weights
+                loss = (criterion(outputs, labels.float())*weights).mean()
+                #loss = criterion(outputs, labels.float())
                 if epoch<opt.warm_epoch and phase == 'train': 
                     warm_up = min(1.0, warm_up + 0.9 / warm_iteration)
                     loss *= warm_up
@@ -151,8 +152,8 @@ def train(**kwargs):
                 running_corrects += float(torch.sum(preds == labels.data.float()))
 
             epoch_loss = running_loss / (len(dataloaders[phase]))
-            epoch_acc = running_corrects / (len(dataloaders[phase])*opt.batchSize*opt.numClass)
-            
+            #epoch_acc = running_corrects / (len(dataloaders[phase]))
+            epoch_acc = running_corrects / (len(dataloaders[phase])*opt.batchSize*opt.numClass)  
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(
                 phase, epoch_loss, epoch_acc))
             
