@@ -4,6 +4,7 @@ from dataReader.celebaData import *
 from PIL import Image, ImageDraw, ImageFont
 from torch.autograd import Variable
 import warnings
+import torch.nn as nn
 from tqdm import tqdm
 from torch.utils import data
 warnings.filterwarnings("ignore")
@@ -20,7 +21,7 @@ transform=T.Compose([
 def prediect(imgDir, imgTxt, modelPath, value, classes):
     dataSets = celebaData(imgDir, imgTxt)
     # print(len(dataSets))
-    dataLoader = data.DataLoader(dataSets, batch_size=2,num_workers=8)
+    dataLoader = data.DataLoader(dataSets, batch_size=4,num_workers=8)
     # print(len(dataLoader))
     net = models.FANet(40)
     net.load_state_dict(torch.load(modelPath, map_location=torch.device('cpu')))
@@ -36,46 +37,28 @@ def prediect(imgDir, imgTxt, modelPath, value, classes):
     y_acc = []
     for count, (inputs, labels) in enumerate(tqdm(dataLoader)):
         now_batch_size,c,h,w = inputs.shape
-        if now_batch_size<2: # skip the last batch
+        if now_batch_size<4: # skip the last batch
             continue
-        inputs = Variable(inputs.cuda().detach())
-        labels = Variable(labels.cuda().detach())
-        outputs = model(inputs)
+        # inputs = Variable(inputs.cuda().detach())
+        # labels = Variable(labels.cuda().detach())
+
+        inputs = Variable(inputs)
+        labels = Variable(labels)
+        outputs = net(inputs)
         criterion = nn.BCELoss()
         loss = criterion(outputs, labels.float())
         zero = torch.zeros_like(outputs.data)
         one = torch.ones_like(outputs.data)
         preds = torch.where(outputs.data > 0.6, one, zero)
         if count!=0 and count % 50== 0:
-            print('Its '+phase+' epoch: '+str(epoch) +', step:'+str(count) +' in epoch, ' +phase+'_loss: '+str(loss.item())+' ,'+phase+'_acc: '+str(float(torch.sum(preds == labels.data.float()))/(2*len(classes))))
+            print('step:'+str(count) +', loss: '+str(loss.item())+', acc: '+str(float(torch.sum(preds == labels.data.float()))/(4*len(classes))))
         
         running_loss += loss.item()
         running_corrects += float(torch.sum(preds == labels.data.float()))
-        y_loss.append(epoch_loss)
-        y_acc.append(epoch_acc) 
-    np.savetxt("train_Loss.txt", y_loss)
-    np.savetxt("val_Loss.txt", y_loss)
-                
-    # draw_table = ImageDraw.Draw(im=img)
-    # # img.show()
-    # img_=transform(img).unsqueeze(0)
-    # #img_ = img.to(device)
-    # outputs = net(img_)
-    # zero = torch.zeros_like(outputs.data)
-    # one = torch.ones_like(outputs.data)
-    # predicted = torch.where(outputs.data > value, one, zero)
-    # pred = dict()
-    # print("==="*15)
-    # for i in range(len(classes)):
-    #     if outputs[0][i].item()>=value:
-    #         # pred[classes[i]]=outputs[0][i].item()
-    #         score = float('%.4f' %outputs[0][i].item())
-    #         print("属性："+classes[i]+"===》score："+str(score))
-    # print("==="*15)
-    # draw_table.text((100,100),"11",direction=None)
-    # img.show()
-    # _, predicted = torch.max(outputs, 1)
-    # print(predicted)
+        # y_loss.append(epoch_loss)
+        # y_acc.append(epoch_acc) 
+    np.savetxt("lfw_loss.txt", y_loss)
+    np.savetxt("lfw_acc.txt", y_acc)
 
 if __name__ == '__main__':
     f = open('datasets/Anno/class.txt')
@@ -86,6 +69,6 @@ if __name__ == '__main__':
     # print(className)
     #modelPath = "/home/shawnliu/workPlace/face_attr/checkpoint/net_6.pkl"
     modelPath = "checkpoint/epoch10FANet.pth"
-    imgDir = '/Users/liuxiaoying/Documents/定稿-毕业论文/毕业论文/使用到的数据集/lfw'
+    imgDir = '/Users/liuxiaoying/Documents/定稿-毕业论文/毕业论文/使用          q到的数据集/lfw'
     imgTxt = '/Users/liuxiaoying/workplace/CV_Code/FANet/datasets/Anno/lfw_val.txt'
     prediect(imgDir,imgTxt,modelPath,0.6,className)

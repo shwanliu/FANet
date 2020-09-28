@@ -122,9 +122,10 @@ def train(**kwargs):
                     outputs = model(inputs)
                 # 数据不平衡，新增类别权重
                 #criterion = eval('nn.' + opt.lossFunc + '()')
-                criterion = nn.BCELoss(reduction='none')
-                loss = (criterion(outputs, labels.float())*weights).mean()
-                #loss = criterion(outputs, labels.float())
+                # criterion = nn.BCELoss(reduction='none')
+                criterion = Weighted_BCELoss(weights)
+                # loss = (criterion(outputs, labels.float())*weights).mean()
+                loss = criterion.forward(outputs, labels.float())
                 if epoch<opt.warm_epoch and phase == 'train': 
                     warm_up = min(1.0, warm_up + 0.9 / warm_iteration)
                     loss *= warm_up
@@ -255,6 +256,22 @@ def sigTerSave(sigNum, frame):
     global isTer
     isTer = True  # 全局变量设置为True
     print('保存模型参数至当前目录的temp.pth...')
+
+class Weighted_BCELoss(object):
+    """
+        Weighted_BCELoss was proposed in "Multi-attribute learning for pedestrian attribute recognition in surveillance scenarios"[13].
+    """
+    def __init__(self, weights):
+        super(Weighted_BCELoss, self).__init__()
+        self.weights = weights
+        self.EPS = 1e-12
+    def forward(self, output, target, epoch):
+        if self.weights is not None:
+            cur_weights = torch.exp(target + (1 - target * 2) * self.weights)
+            loss = cur_weights *  (target * torch.log(output + self.EPS)) + ((1 - target) * torch.log(1 - output + self.EPS))
+        else:
+            loss = target * torch.log(output + self.EPS) + (1 - target) * torch.log(1 - output + self.EPS)
+        return torch.neg(torch.mean(loss))
 
 if __name__ == '__main__':
     train()
